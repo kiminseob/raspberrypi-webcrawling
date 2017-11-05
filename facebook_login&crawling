@@ -1,0 +1,100 @@
+#파이썬3.6
+#페이스북에 로그인하여 크롤링
+#크롤링한 데이터를 텔레그램 봇API을 이용해 알림을 보내준다.
+ 
+import argparse
+import datetime
+import json
+import logging
+import re
+import random
+import requests
+import shutil
+from pyquery import PyQuery as pq
+from bs4 import BeautifulSoup as bs
+import time
+import telegram
+
+#텔레그렘 봇의 API 키 가져옴
+bot = telegram.Bot(token = '봇 토큰')
+chat_id =  메시지보낼채팅아이디
+
+def main(username, password):
+
+    logging.basicConfig(filename='imgur2fb.log', level=logging.DEBUG)
+
+    with requests.Session() as session:
+        uid, dtsg = login(session, username, password)
+  
+def login(session, username, password):
+
+    '''
+    페이스북 로그인
+    '''
+
+    #페이스북 홈페이지
+    response = session.get('https://facebook.com')
+
+    # Construct the DOM
+    dom = pq(response.text)
+
+    # Get the lsd value from the HTML. This is required to make the login request
+    lsd = dom('[name="lsd"]').val()
+
+    # Perform the login request
+    
+    response = session.post('https://www.facebook.com/login.php?login_attempt=1', data={
+        'lsd': lsd,
+        'email': username,
+        'pass': password,
+        'default_persistent': '0',
+        'timezone': '-60',
+        'lgndim': '',
+        'lgnrnd': '',
+        'lgnjs': '',
+        'locale':'en_GB',
+        'qsstamp': ''
+    })
+  
+    '''
+    Get the users ID and fb_dtsg token. The fb_dtsg token is required when making requests as a logged in user. It
+    never changes, so we only need to grab this token once.
+
+    If the login was successful a cookie 'c_user' is set by Facebook. If the login failed, the 'c_user' cookie
+    will not be present. This will raise an exception.
+    '''
+    try:
+        uid = session.cookies['c_user']
+        dtsg = re.search(r'(type="hidden" name="fb_dtsg" value="([0-9a-zA-Z-_:]+)")', response.text).group(1)
+
+        dtsg = dtsg[dtsg.find("value")+6:]
+        dtsg = dtsg[1:-1]
+        
+       
+        while True:
+            print('인섭봇돌아가는중')
+            site=session.get('페북주소')
+            soup = bs(site.text,'html.parser')
+            fine_data = soup.find_all('a').text
+                          
+          #인섭봇에게 메세지 보냄!!
+            bot.sendMessage(chat_id=chat_id, text='테스트 중')
+            bot.sendMessage(chat_id=chat_id, text=a)
+            time.sleep(10000)
+       
+     
+      
+    except KeyError:
+        raise Exception('Login Failed!')
+
+    return uid, dtsg
+
+
+
+try:
+    main(username='아이디', password='비번')
+except Exception as e:
+    logging.exception(e)
+    print (e)
+    
+   
